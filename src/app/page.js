@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { assignGroup } from "@/utils/assignGroup";
+import { fetchConfiguracionGeneral } from "@/lib/configGeneral";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
@@ -23,6 +24,7 @@ const erroresNinoVacio = () => ({
 export default function LandingPage() {
   const router = useRouter();
   const [edicion, setEdicion] = useState(null);
+  const [configGeneral, setConfigGeneral] = useState(null);
   const [grupos, setGrupos] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [enviando, setEnviando] = useState(false);
@@ -64,6 +66,10 @@ export default function LandingPage() {
         .order("edad_min", { ascending: true });
 
       setGrupos(gruposData || []);
+
+      const configData = await fetchConfiguracionGeneral();
+      setConfigGeneral(configData);
+
       setCargando(false);
     };
 
@@ -397,7 +403,7 @@ export default function LandingPage() {
         </form>
       </main>
 
-      <Footer edicion={edicion} />
+      <Footer edicion={edicion} configGeneral={configGeneral} />
     </div>
   );
 }
