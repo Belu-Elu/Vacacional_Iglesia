@@ -83,16 +83,25 @@ function DashboardContenido() {
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-6">
       <div className="max-w-6xl mx-auto">
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-          <h1 className="text-xl font-bold text-gray-800">Dashboard Administrador</h1>
-          <nav className="flex gap-3 text-sm">
-            <Link href="/admin/configuracion" className="text-primary font-semibold">
-              ⚙️ Configuración
+        <div className="bg-primary rounded-xl p-4 mb-6 flex flex-wrap items-center justify-between gap-3 shadow">
+          <h1 className="text-xl font-bold text-white">Panel de Administrador</h1>
+          <nav className="flex flex-wrap gap-2 text-sm">
+            <Link
+              href="/admin/configuracion"
+              className="bg-white/15 hover:bg-white/25 text-white font-semibold px-3 py-2 rounded-lg transition"
+            >
+              ⚙️ Configuraciones
             </Link>
-            <Link href="/admin/usuarios" className="text-primary font-semibold">
+            <Link
+              href="/admin/usuarios"
+              className="bg-white/15 hover:bg-white/25 text-white font-semibold px-3 py-2 rounded-lg transition"
+            >
               👥 Usuarios
             </Link>
-            <Link href="/voluntario/asistencia" className="text-primary font-semibold">
+            <Link
+              href="/voluntario/asistencia"
+              className="bg-white/15 hover:bg-white/25 text-white font-semibold px-3 py-2 rounded-lg transition"
+            >
               📷 Escáner
             </Link>
           </nav>
