@@ -30,11 +30,14 @@ export default function LandingPage() {
   const [enviando, setEnviando] = useState(false);
   const [errorGeneral, setErrorGeneral] = useState("");
 
+  // "formulario" -> el usuario está llenando datos
+  // "revision"   -> se muestra el resumen para confirmar antes de guardar
+  const [paso, setPaso] = useState("formulario");
+
   const [representante, setRepresentante] = useState("");
   const [telefono, setTelefono] = useState("");
   const [ninos, setNinos] = useState([ninoVacio()]);
 
-  // Errores por campo
   const [errores, setErrores] = useState({
     representante: "",
     telefono: "",
@@ -84,7 +87,6 @@ export default function LandingPage() {
       copia[index] = { ...copia[index], [campo]: valor };
       return copia;
     });
-    // Limpiar el error de ese campo específico al escribir
     setErrores((prev) => {
       const copiaNinos = [...prev.ninos];
       copiaNinos[index] = { ...copiaNinos[index], [campo]: "" };
@@ -110,7 +112,6 @@ export default function LandingPage() {
     setErrores((prev) => ({ ...prev, representante: "" }));
   };
 
-  // El teléfono solo permite dígitos y máximo 10 caracteres
   const handleTelefonoChange = (valor) => {
     const soloNumeros = valor.replace(/\D/g, "").slice(0, 10);
     setTelefono(soloNumeros);
@@ -145,12 +146,10 @@ export default function LandingPage() {
         nuevosErrores.ninos[index].nombres_nino = "Este campo es obligatorio. Escribe el/los nombre(s) del niño/a.";
         esValido = false;
       }
-
       if (!nino.apellidos_nino.trim()) {
         nuevosErrores.ninos[index].apellidos_nino = "Este campo es obligatorio. Escribe el/los apellido(s) del niño/a.";
         esValido = false;
       }
-
       if (!String(nino.edad).trim()) {
         nuevosErrores.ninos[index].edad = "Este campo es obligatorio. Ingresa la edad del niño/a en años.";
         esValido = false;
@@ -164,9 +163,9 @@ export default function LandingPage() {
     return esValido;
   };
 
-  // ---------- Envío ----------
+  // ---------- Paso 1: validar y pasar a revisión ----------
 
-  const handleSubmit = async (e) => {
+  const handleContinuarARevision = (e) => {
     e.preventDefault();
     setErrorGeneral("");
 
@@ -174,6 +173,19 @@ export default function LandingPage() {
       return;
     }
 
+    setPaso("revision");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleEditar = () => {
+    setPaso("formulario");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // ---------- Paso 2: confirmar y guardar en la base de datos ----------
+
+  const handleConfirmarInscripcion = async () => {
+    setErrorGeneral("");
     setEnviando(true);
 
     try {
@@ -203,7 +215,6 @@ export default function LandingPage() {
     } catch (err) {
       setErrorGeneral("Ocurrió un error al guardar la inscripción. Intenta de nuevo.");
       console.error(err);
-    } finally {
       setEnviando(false);
     }
   };
@@ -224,7 +235,6 @@ export default function LandingPage() {
     );
   }
 
-  // Clases reutilizables para inputs, con estado de error
   const claseInput = (tieneError) =>
     `w-full border rounded-lg px-3 py-2 outline-none transition placeholder:text-gray-400 ${
       tieneError
@@ -237,170 +247,258 @@ export default function LandingPage() {
       <Header edicion={edicion} />
 
       <main className="flex-1 max-w-2xl w-full mx-auto px-4 py-8">
-        <h2 className="text-xl font-bold text-gray-800 mb-1">
-          Formulario de Inscripción
-        </h2>
-        <p className="text-gray-500 mb-1">
-          Completa los datos de tu(s) hijo(s) para participar en {edicion.titulo}.
-        </p>
-        <p className="text-gray-400 text-sm mb-6">
-          Los campos marcados con <span className="text-red-500 font-semibold">*</span> son obligatorios.
-        </p>
+        {paso === "formulario" && (
+          <>
+            <h2 className="text-xl font-bold text-gray-800 mb-1">
+              Formulario de Inscripción
+            </h2>
+            <p className="text-gray-500 mb-1">
+              Completa los datos de tu(s) hijo(s) para participar en {edicion.titulo}.
+            </p>
+            <p className="text-gray-400 text-sm mb-6">
+              Los campos marcados con <span className="text-red-500 font-semibold">*</span> son obligatorios.
+            </p>
 
-        <form onSubmit={handleSubmit} noValidate className="space-y-6">
-          {/* ---------- Datos del representante ---------- */}
-          <div className="bg-white p-4 rounded-xl border space-y-4">
-            <h3 className="font-semibold text-gray-700">Datos del representante</h3>
+            <form onSubmit={handleContinuarARevision} noValidate className="space-y-6">
+              {/* ---------- Datos del representante ---------- */}
+              <div className="bg-white p-4 rounded-xl border space-y-4">
+                <h3 className="font-semibold text-gray-700">Datos del representante</h3>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nombre completo del representante <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                placeholder="Ej: Luis Vera"
-                className={claseInput(errores.representante)}
-                value={representante}
-                onChange={(e) => handleRepresentanteChange(e.target.value)}
-              />
-              {errores.representante && (
-                <p className="text-red-500 text-sm mt-1">⚠ {errores.representante}</p>
-              )}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nombre completo del representante <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ej: Luis Vera"
+                    className={claseInput(errores.representante)}
+                    value={representante}
+                    onChange={(e) => handleRepresentanteChange(e.target.value)}
+                  />
+                  {errores.representante && (
+                    <p className="text-red-500 text-sm mt-1">⚠ {errores.representante}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Teléfono de contacto <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    placeholder="Ej: 0991234567"
+                    maxLength={10}
+                    className={claseInput(errores.telefono)}
+                    value={telefono}
+                    onChange={(e) => handleTelefonoChange(e.target.value)}
+                  />
+                  {errores.telefono ? (
+                    <p className="text-red-500 text-sm mt-1">⚠ {errores.telefono}</p>
+                  ) : (
+                    <p className="text-gray-400 text-xs mt-1">Solo números, 10 dígitos (celular).</p>
+                  )}
+                </div>
+              </div>
+
+              {/* ---------- Datos de cada niño ---------- */}
+              {ninos.map((nino, index) => (
+                <div key={index} className="bg-white p-4 rounded-xl border space-y-4 relative">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-gray-700">Datos de niño/a #{index + 1}</h3>
+                    {ninos.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => quitarNino(index)}
+                        className="text-red-500 text-sm"
+                      >
+                        Quitar
+                      </button>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Nombres <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ej: Sofía"
+                      className={claseInput(errores.ninos[index]?.nombres_nino)}
+                      value={nino.nombres_nino}
+                      onChange={(e) => actualizarNino(index, "nombres_nino", e.target.value)}
+                    />
+                    {errores.ninos[index]?.nombres_nino && (
+                      <p className="text-red-500 text-sm mt-1">⚠ {errores.ninos[index].nombres_nino}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Apellidos <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ej: Vera Ramírez"
+                      className={claseInput(errores.ninos[index]?.apellidos_nino)}
+                      value={nino.apellidos_nino}
+                      onChange={(e) => actualizarNino(index, "apellidos_nino", e.target.value)}
+                    />
+                    {errores.ninos[index]?.apellidos_nino && (
+                      <p className="text-red-500 text-sm mt-1">⚠ {errores.ninos[index].apellidos_nino}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Edad <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="17"
+                      placeholder="Ej: 5"
+                      className={claseInput(errores.ninos[index]?.edad)}
+                      value={nino.edad}
+                      onChange={(e) => actualizarNino(index, "edad", e.target.value)}
+                    />
+                    {errores.ninos[index]?.edad && (
+                      <p className="text-red-500 text-sm mt-1">⚠ {errores.ninos[index].edad}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Alergias o condiciones médicas <span className="text-gray-400 font-normal">(opcional)</span>
+                    </label>
+                    <textarea
+                      placeholder="Ej: Alergia a la penicilina, asma, ninguna"
+                      className={claseInput(false)}
+                      value={nino.alergias_medicas}
+                      onChange={(e) => actualizarNino(index, "alergias_medicas", e.target.value)}
+                    />
+                  </div>
+
+                  {nino.edad && !errores.ninos[index]?.edad && (
+                    <p className="text-sm text-gray-500">
+                      Grupo asignado:{" "}
+                      <span className="font-semibold">
+                        {assignGroup(Number(nino.edad), grupos)?.nombre_grupo ||
+                          "Sin grupo configurado para esta edad"}
+                      </span>
+                    </p>
+                  )}
+                </div>
+              ))}
+
+              <button
+                type="button"
+                onClick={agregarNino}
+                className="w-full border-2 border-dashed border-primary text-primary font-semibold py-2 rounded-lg"
+              >
+                + Agregar otro hijo/a
+              </button>
+
+              {errorGeneral && <p className="text-red-500 text-sm">{errorGeneral}</p>}
+
+              <button
+                type="submit"
+                className="w-full bg-primary hover:bg-primary-dark text-white font-bold py-3 rounded-lg transition"
+              >
+                Revisar antes de inscribir
+              </button>
+            </form>
+          </>
+        )}
+
+        {paso === "revision" && (
+          <>
+            <h2 className="text-xl font-bold text-gray-800 mb-1">
+              Revisa tus datos antes de confirmar
+            </h2>
+            <p className="text-gray-500 mb-6">
+              Verifica que todo esté correcto, especialmente el número de celular, ya
+              que será usado para contactarte durante el vacacional.
+            </p>
+
+            <div className="space-y-6">
+              <div className="bg-white p-4 rounded-xl border">
+                <h3 className="font-semibold text-gray-700 mb-3">Datos del representante</h3>
+                <dl className="space-y-2 text-sm">
+                  <div className="flex justify-between border-b pb-2">
+                    <dt className="text-gray-500">Nombre completo</dt>
+                    <dd className="font-medium text-gray-800">{representante}</dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-gray-500">Teléfono de contacto</dt>
+                    <dd className="font-medium text-gray-800">{telefono}</dd>
+                  </div>
+                </dl>
+              </div>
+
+              {ninos.map((nino, index) => {
+                const grupo = assignGroup(Number(nino.edad), grupos);
+                return (
+                  <div key={index} className="bg-white p-4 rounded-xl border">
+                    <h3 className="font-semibold text-gray-700 mb-3">Niño/a #{index + 1}</h3>
+                    <dl className="space-y-2 text-sm">
+                      <div className="flex justify-between border-b pb-2">
+                        <dt className="text-gray-500">Nombres</dt>
+                        <dd className="font-medium text-gray-800">{nino.nombres_nino}</dd>
+                      </div>
+                      <div className="flex justify-between border-b pb-2">
+                        <dt className="text-gray-500">Apellidos</dt>
+                        <dd className="font-medium text-gray-800">{nino.apellidos_nino}</dd>
+                      </div>
+                      <div className="flex justify-between border-b pb-2">
+                        <dt className="text-gray-500">Edad</dt>
+                        <dd className="font-medium text-gray-800">{nino.edad} años</dd>
+                      </div>
+                      <div className="flex justify-between border-b pb-2">
+                        <dt className="text-gray-500">Grupo asignado</dt>
+                        <dd>
+                          <span
+                            className="px-2 py-0.5 rounded-full text-xs text-white font-semibold"
+                            style={{ backgroundColor: grupo?.color_hex || "#6b7280" }}
+                          >
+                            {grupo?.nombre_grupo || "Sin grupo"}
+                          </span>
+                        </dd>
+                      </div>
+                      <div className="flex justify-between">
+                        <dt className="text-gray-500">Alergias</dt>
+                        <dd className="font-medium text-gray-800 text-right max-w-[60%]">
+                          {nino.alergias_medicas?.trim() || "Ninguna"}
+                        </dd>
+                      </div>
+                    </dl>
+                  </div>
+                );
+              })}
+
+              {errorGeneral && <p className="text-red-500 text-sm">{errorGeneral}</p>}
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  type="button"
+                  onClick={handleEditar}
+                  disabled={enviando}
+                  className="flex-1 border-2 border-primary text-primary font-bold py-3 rounded-lg transition disabled:opacity-50"
+                >
+                  ✏️ Volver a editar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmarInscripcion}
+                  disabled={enviando}
+                  className="flex-1 bg-primary hover:bg-primary-dark text-white font-bold py-3 rounded-lg transition disabled:opacity-50"
+                >
+                  {enviando ? "Guardando..." : "✅ Confirmar e inscribir"}
+                </button>
+              </div>
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Teléfono de contacto <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="tel"
-                inputMode="numeric"
-                placeholder="Ej: 0991234567"
-                maxLength={10}
-                className={claseInput(errores.telefono)}
-                value={telefono}
-                onChange={(e) => handleTelefonoChange(e.target.value)}
-              />
-              {errores.telefono ? (
-                <p className="text-red-500 text-sm mt-1">⚠ {errores.telefono}</p>
-              ) : (
-                <p className="text-gray-400 text-xs mt-1">
-                  Solo números, 10 dígitos (celular).
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* ---------- Datos de cada niño ---------- */}
-          {ninos.map((nino, index) => (
-            <div key={index} className="bg-white p-4 rounded-xl border space-y-4 relative">
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-gray-700">
-                  Niño/a #{index + 1}
-                </h3>
-                {ninos.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => quitarNino(index)}
-                    className="text-red-500 text-sm"
-                  >
-                    Quitar
-                  </button>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nombres <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ej: Sofía"
-                  className={claseInput(errores.ninos[index]?.nombres_nino)}
-                  value={nino.nombres_nino}
-                  onChange={(e) => actualizarNino(index, "nombres_nino", e.target.value)}
-                />
-                {errores.ninos[index]?.nombres_nino && (
-                  <p className="text-red-500 text-sm mt-1">⚠ {errores.ninos[index].nombres_nino}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Apellidos <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ej: Vera Ramírez"
-                  className={claseInput(errores.ninos[index]?.apellidos_nino)}
-                  value={nino.apellidos_nino}
-                  onChange={(e) => actualizarNino(index, "apellidos_nino", e.target.value)}
-                />
-                {errores.ninos[index]?.apellidos_nino && (
-                  <p className="text-red-500 text-sm mt-1">⚠ {errores.ninos[index].apellidos_nino}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Edad <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="17"
-                  placeholder="Ej: 5"
-                  className={claseInput(errores.ninos[index]?.edad)}
-                  value={nino.edad}
-                  onChange={(e) => actualizarNino(index, "edad", e.target.value)}
-                />
-                {errores.ninos[index]?.edad && (
-                  <p className="text-red-500 text-sm mt-1">⚠ {errores.ninos[index].edad}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Alergias o condiciones médicas <span className="text-gray-400 font-normal">(opcional)</span>
-                </label>
-                <textarea
-                  placeholder="Ej: Alergia a la penicilina, asma, ninguna"
-                  className={claseInput(false)}
-                  value={nino.alergias_medicas}
-                  onChange={(e) => actualizarNino(index, "alergias_medicas", e.target.value)}
-                />
-              </div>
-
-              {nino.edad && !errores.ninos[index]?.edad && (
-                <p className="text-sm text-gray-500">
-                  Grupo asignado:{" "}
-                  <span className="font-semibold">
-                    {assignGroup(Number(nino.edad), grupos)?.nombre_grupo ||
-                      "Sin grupo configurado para esta edad"}
-                  </span>
-                </p>
-              )}
-            </div>
-          ))}
-
-          <button
-            type="button"
-            onClick={agregarNino}
-            className="w-full border-2 border-dashed border-primary text-primary font-semibold py-2 rounded-lg"
-          >
-            + Agregar otro hijo/a
-          </button>
-
-          {errorGeneral && <p className="text-red-500 text-sm">{errorGeneral}</p>}
-
-          <button
-            type="submit"
-            disabled={enviando}
-            className="w-full bg-primary hover:bg-primary-dark text-white font-bold py-3 rounded-lg transition disabled:opacity-50"
-          >
-            {enviando ? "Guardando..." : "Inscribir"}
-          </button>
-        </form>
+          </>
+        )}
       </main>
 
       <Footer edicion={edicion} configGeneral={configGeneral} />

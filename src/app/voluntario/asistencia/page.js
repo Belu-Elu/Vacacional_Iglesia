@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import QRScanner from "@/components/QRScanner";
+import { generateGroupListPDF } from "@/utils/generatePDF";
 
 function AsistenciaContenido() {
   const [edicion, setEdicion] = useState(null);
@@ -14,6 +15,10 @@ function AsistenciaContenido() {
   const [resultados, setResultados] = useState([]);
   const [buscando, setBuscando] = useState(false);
   const [procesandoQR, setProcesandoQR] = useState(false);
+
+  const [grupos, setGrupos] = useState([]);
+  const [grupoFiltro, setGrupoFiltro] = useState("todos");
+  const [descargando, setDescargando] = useState(false);
 
   useEffect(() => {
     const cargar = async () => {
@@ -35,6 +40,14 @@ function AsistenciaContenido() {
           .single();
 
         setDiaHoy(dia || null);
+
+        const { data: gruposData } = await supabase
+          .from("grupos")
+          .select("*")
+          .eq("edicion_id", edicionActiva.id)
+          .order("edad_min");
+
+        setGrupos(gruposData || []);
       }
     };
     cargar();
@@ -86,15 +99,56 @@ function AsistenciaContenido() {
     }
     setBuscando(true);
 
-    const { data } = await supabase
+    let query = supabase
       .from("inscripciones")
       .select("*, grupos(*), asistencias(*)")
       .eq("edicion_id", edicion.id)
       .or(`nombres_nino.ilike.%${texto}%,apellidos_nino.ilike.%${texto}%`)
       .limit(20);
 
+    if (grupoFiltro !== "todos") {
+      query = query.eq("grupo_id", grupoFiltro);
+    }
+
+    const { data } = await query;
     setResultados(data || []);
     setBuscando(false);
+  };
+
+  // Descarga la lista en PDF del grupo seleccionado (o de todos), con alergias
+  // incluidas. No incluye datos del representante: eso lo maneja el admin.
+  const descargarListaGrupo = async () => {
+    if (!edicion) return;
+    setDescargando(true);
+
+    let query = supabase
+      .from("inscripciones")
+      .select("*, grupos(*)")
+      .eq("edicion_id", edicion.id);
+
+    if (grupoFiltro !== "todos") {
+      query = query.eq("grupo_id", grupoFiltro);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      setMensaje({ tipo: "error", texto: "Error al generar la lista." });
+      setDescargando(false);
+      return;
+    }
+
+    const nombreGrupo =
+      grupoFiltro === "todos"
+        ? "Todos los grupos"
+        : grupos.find((g) => g.id === grupoFiltro)?.nombre_grupo || "Grupo";
+
+    generateGroupListPDF(data || [], nombreGrupo, {
+      incluirRepresentante: false,
+      incluirAlergias: true,
+    });
+
+    setDescargando(false);
   };
 
   return (
@@ -104,6 +158,35 @@ function AsistenciaContenido() {
         <p className="text-gray-500 text-sm mb-4">
           {diaHoy ? `Día: ${diaHoy.nombre_dia}` : "No hay día configurado para hoy"}
         </p>
+
+        {/* Filtro de grupo + descarga de lista (con alergias) */}
+        <div className="bg-white border rounded-lg p-3 mb-4 space-y-2">
+          <label className="block text-xs font-medium text-gray-600">
+            Mi grupo / aula
+          </label>
+          <select
+            value={grupoFiltro}
+            onChange={(e) => {
+              setGrupoFiltro(e.target.value);
+              if (busqueda.trim().length >= 2) buscar(busqueda);
+            }}
+            className="w-full border rounded-lg px-3 py-2 text-sm"
+          >
+            <option value="todos">Todos los grupos</option>
+            {grupos.map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.nombre_grupo}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={descargarListaGrupo}
+            disabled={descargando}
+            className="w-full bg-primary hover:bg-primary-dark text-white text-sm font-semibold py-2 rounded-lg disabled:opacity-50"
+          >
+            {descargando ? "Generando..." : "📄 Descargar lista de mi grupo (con alergias)"}
+          </button>
+        </div>
 
         <div className="flex bg-white rounded-lg border p-1 mb-4">
           <button
