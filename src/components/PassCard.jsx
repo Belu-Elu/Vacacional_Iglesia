@@ -45,8 +45,8 @@ export default function PassCard({ inscripcion, edicion }) {
             <QRCodeCanvas value={inscripcion.id} size={160} level="H" />
           </div>
 
-          <p className="text-xs text-gray-400 text-center">
-            Presenta este código en la entrada cada día
+          <p className="text-base font-bold text-red-600 text-center">
+            ⚠ Presenta este código en la entrada cada día
           </p>
         </div>
       </div>
