@@ -18,6 +18,7 @@ function RegistroPuertaContenido() {
     edad: "",
     alergias_medicas: "",
     nombre_representante: "",
+    correo_representante: "",
     telefono_representante: "",
   });
 
@@ -70,6 +71,7 @@ function RegistroPuertaContenido() {
           edad: Number(form.edad),
           alergias_medicas: form.alergias_medicas.trim() || null,
           nombre_representante: form.nombre_representante.trim(),
+          correo_representante: form.correo_representante.trim() || null,
           telefono_representante: form.telefono_representante.trim(),
         })
         .select()
@@ -97,6 +99,7 @@ function RegistroPuertaContenido() {
         edad: "",
         alergias_medicas: "",
         nombre_representante: "",
+        correo_representante: "",
         telefono_representante: "",
       });
     } catch (err) {
@@ -164,6 +167,13 @@ function RegistroPuertaContenido() {
             className="w-full border rounded-lg px-3 py-2"
             value={form.nombre_representante}
             onChange={(e) => actualizar("nombre_representante", e.target.value)}
+          />
+          <input
+            type="email"
+            placeholder="Correo electrónico (opcional)"
+            className="w-full border rounded-lg px-3 py-2"
+            value={form.correo_representante}
+            onChange={(e) => actualizar("correo_representante", e.target.value)}
           />
           <input
             required
