@@ -339,7 +339,7 @@ export default function LandingPage() {
               {ninos.map((nino, index) => (
                 <div key={index} className="bg-white p-4 rounded-xl border space-y-4 relative">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-gray-700">Niño/a #{index + 1}</h3>
+                    <h3 className="font-semibold text-gray-700">Datos de niño/a {index + 1}</h3>
                     {ninos.length > 1 && (
                       <button
                         type="button"
@@ -480,7 +480,7 @@ export default function LandingPage() {
                 const grupo = assignGroup(Number(nino.edad), grupos);
                 return (
                   <div key={index} className="bg-white p-4 rounded-xl border">
-                    <h3 className="font-semibold text-gray-700 mb-3">Niño/a #{index + 1}</h3>
+                    <h3 className="font-semibold text-gray-700 mb-3">Datos de niño/a {index + 1}</h3>
                     <dl className="space-y-2 text-sm">
                       <div className="flex justify-between border-b pb-2">
                         <dt className="text-gray-500">Nombres</dt>
