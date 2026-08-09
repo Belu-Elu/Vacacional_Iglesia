@@ -35,11 +35,13 @@ export default function LandingPage() {
   const [paso, setPaso] = useState("formulario");
 
   const [representante, setRepresentante] = useState("");
+  const [correo, setCorreo] = useState("");
   const [telefono, setTelefono] = useState("");
   const [ninos, setNinos] = useState([ninoVacio()]);
 
   const [errores, setErrores] = useState({
     representante: "",
+    correo: "",
     telefono: "",
     ninos: [erroresNinoVacio()],
   });
@@ -112,6 +114,11 @@ export default function LandingPage() {
     setErrores((prev) => ({ ...prev, representante: "" }));
   };
 
+  const handleCorreoChange = (valor) => {
+    setCorreo(valor);
+    setErrores((prev) => ({ ...prev, correo: "" }));
+  };
+
   const handleTelefonoChange = (valor) => {
     const soloNumeros = valor.replace(/\D/g, "").slice(0, 10);
     setTelefono(soloNumeros);
@@ -123,6 +130,7 @@ export default function LandingPage() {
   const validarFormulario = () => {
     const nuevosErrores = {
       representante: "",
+      correo: "",
       telefono: "",
       ninos: ninos.map(() => erroresNinoVacio()),
     };
@@ -130,6 +138,11 @@ export default function LandingPage() {
 
     if (!representante.trim()) {
       nuevosErrores.representante = "Este campo es obligatorio. Ingresa el nombre completo del representante.";
+      esValido = false;
+    }
+
+    if (correo.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo.trim())) {
+      nuevosErrores.correo = "Ese correo no parece válido. Revisa que tenga el formato nombre@correo.com.";
       esValido = false;
     }
 
@@ -199,6 +212,7 @@ export default function LandingPage() {
           edad: Number(nino.edad),
           alergias_medicas: nino.alergias_medicas.trim() || null,
           nombre_representante: representante.trim(),
+          correo_representante: correo.trim() || null,
           telefono_representante: telefono.trim(),
         };
       });
@@ -282,6 +296,26 @@ export default function LandingPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Correo electrónico <span className="text-gray-400 font-normal">(opcional)</span>
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="Ej: luis.vera@gmail.com"
+                    className={claseInput(errores.correo)}
+                    value={correo}
+                    onChange={(e) => handleCorreoChange(e.target.value)}
+                  />
+                  {errores.correo ? (
+                    <p className="text-red-500 text-sm mt-1">⚠ {errores.correo}</p>
+                  ) : (
+                    <p className="text-gray-400 text-xs mt-1">
+                      Nos sirve como otro medio de contacto contigo durante el vacacional.
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Teléfono de contacto <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -305,7 +339,7 @@ export default function LandingPage() {
               {ninos.map((nino, index) => (
                 <div key={index} className="bg-white p-4 rounded-xl border space-y-4 relative">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-gray-700">Datos de niño/a #{index + 1}</h3>
+                    <h3 className="font-semibold text-gray-700">Niño/a #{index + 1}</h3>
                     {ninos.length > 1 && (
                       <button
                         type="button"
@@ -429,6 +463,12 @@ export default function LandingPage() {
                     <dt className="text-gray-500">Nombre completo</dt>
                     <dd className="font-medium text-gray-800">{representante}</dd>
                   </div>
+                  {correo.trim() && (
+                    <div className="flex justify-between border-b pb-2">
+                      <dt className="text-gray-500">Correo electrónico</dt>
+                      <dd className="font-medium text-gray-800">{correo}</dd>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <dt className="text-gray-500">Teléfono de contacto</dt>
                     <dd className="font-medium text-gray-800">{telefono}</dd>

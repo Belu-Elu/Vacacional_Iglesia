@@ -14,6 +14,7 @@ export function exportAttendanceToExcel(inscripciones, dias, nombreArchivo = "as
       Edad: insc.edad,
       Grupo: insc.grupos?.nombre_grupo || "Sin grupo",
       Representante: insc.nombre_representante,
+      Correo: insc.correo_representante || "",
       Telefono: insc.telefono_representante,
       Alergias: insc.alergias_medicas || "",
     };
