@@ -93,6 +93,7 @@ function TabVacacional({ mostrarMensaje }) {
 
   const [nuevaEdicion, setNuevaEdicion] = useState({ anio: "", titulo: "", contacto_telefono: "" });
   const [nuevoGrupo, setNuevoGrupo] = useState({ nombre_grupo: "", edad_min: "", edad_max: "", color_hex: "#2f7d32" });
+  const [editandoGrupoId, setEditandoGrupoId] = useState(null); // Nuevo estado
   const [nuevoDia, setNuevoDia] = useState({ fecha: "", nombre_dia: "" });
 
   const [datosEdicion, setDatosEdicion] = useState({
@@ -311,22 +312,51 @@ function TabVacacional({ mostrarMensaje }) {
   };
 
   // ---- Grupos ----
-  const agregarGrupo = async (e) => {
-    e.preventDefault();
-    const { error } = await supabase.from("grupos").insert({
-      edicion_id: edicionId,
-      nombre_grupo: nuevoGrupo.nombre_grupo,
-      edad_min: Number(nuevoGrupo.edad_min),
-      edad_max: Number(nuevoGrupo.edad_max),
-      color_hex: nuevoGrupo.color_hex,
+  const iniciarEdicionGrupo = (grupo) => {
+    setEditandoGrupoId(grupo.id);
+    setNuevoGrupo({
+      nombre_grupo: grupo.nombre_grupo,
+      edad_min: grupo.edad_min,
+      edad_max: grupo.edad_max,
+      color_hex: grupo.color_hex,
     });
+  };
 
-    if (error) {
-      mostrarMensaje("error", "Error al agregar el grupo.");
-      return;
+  const cancelarEdicionGrupo = () => {
+    setEditandoGrupoId(null);
+    setNuevoGrupo({ nombre_grupo: "", edad_min: "", edad_max: "", color_hex: "#2f7d32" });
+  };
+
+  const guardarGrupo = async (e) => {
+    e.preventDefault();
+    
+    if (editandoGrupoId) {
+      // MODO EDICIÓN
+      const { error } = await supabase.from("grupos").update({
+        nombre_grupo: nuevoGrupo.nombre_grupo,
+        edad_min: Number(nuevoGrupo.edad_min),
+        edad_max: Number(nuevoGrupo.edad_max),
+        color_hex: nuevoGrupo.color_hex,
+      }).eq("id", editandoGrupoId);
+
+      if (error) return mostrarMensaje("error", "Error al actualizar el grupo.");
+      mostrarMensaje("ok", "Grupo actualizado correctamente.");
+    } else {
+      // MODO CREACIÓN
+      const { error } = await supabase.from("grupos").insert({
+        edicion_id: edicionId,
+        nombre_grupo: nuevoGrupo.nombre_grupo,
+        edad_min: Number(nuevoGrupo.edad_min),
+        edad_max: Number(nuevoGrupo.edad_max),
+        color_hex: nuevoGrupo.color_hex,
+      });
+
+      if (error) return mostrarMensaje("error", "Error al agregar el grupo.");
+      mostrarMensaje("ok", "Grupo creado correctamente.");
     }
 
-    setNuevoGrupo({ nombre_grupo: "", edad_min: "", edad_max: "", color_hex: "#2f7d32" });
+    cancelarEdicionGrupo(); // Limpiamos el formulario
+    // Refrescamos la lista
     const { data: g } = await supabase.from("grupos").select("*").eq("edicion_id", edicionId).order("edad_min");
     setGrupos(g || []);
   };
@@ -577,19 +607,24 @@ function TabVacacional({ mostrarMensaje }) {
                       ({g.edad_min}-{g.edad_max} años)
                     </span>
                   </div>
-                  <button onClick={() => eliminarGrupo(g.id)} className="text-red-500 text-sm">
-                    Eliminar
-                  </button>
+                  <div className="flex gap-3">
+                    <button onClick={() => iniciarEdicionGrupo(g)} className="text-blue-500 text-sm font-medium hover:underline">
+                      Editar
+                    </button>
+                    <button onClick={() => eliminarGrupo(g.id)} className="text-red-500 text-sm font-medium hover:underline">
+                      Eliminar
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
 
-            <form onSubmit={agregarGrupo} className="grid grid-cols-2 md:grid-cols-5 gap-2">
+            <form onSubmit={guardarGrupo} className="grid grid-cols-2 md:grid-cols-6 gap-2">
               <input
                 required
                 type="text"
                 placeholder="Nombre"
-                className="border rounded-lg px-3 py-2 col-span-2 md:col-span-1"
+                className="border rounded-lg px-3 py-2 col-span-2 md:col-span-2"
                 value={nuevoGrupo.nombre_grupo}
                 onChange={(e) => setNuevoGrupo({ ...nuevoGrupo, nombre_grupo: e.target.value })}
               />
@@ -615,9 +650,16 @@ function TabVacacional({ mostrarMensaje }) {
                 value={nuevoGrupo.color_hex}
                 onChange={(e) => setNuevoGrupo({ ...nuevoGrupo, color_hex: e.target.value })}
               />
-              <button type="submit" className="bg-primary text-white rounded-lg font-semibold">
-                + Agregar
-              </button>
+              <div className="flex gap-1 md:col-span-1 col-span-2">
+                <button type="submit" className="bg-primary text-white rounded-lg font-semibold w-full">
+                  {editandoGrupoId ? "Guardar" : "+ Agregar"}
+                </button>
+                {editandoGrupoId && (
+                  <button type="button" onClick={cancelarEdicionGrupo} className="bg-gray-200 text-gray-700 rounded-lg font-semibold w-full text-xs">
+                    Cancelar
+                  </button>
+                )}
+              </div>
             </form>
           </section>
 
